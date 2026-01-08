@@ -2,126 +2,188 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>MQTT Connection Tester</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Điều Khiển Quạt - MQTT</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    
     <style>
-        body { font-family: monospace; padding: 20px; max-width: 800px; margin: 0 auto; }
-        .input-group { margin-bottom: 10px; }
-        label { display: inline-block; width: 150px; font-weight: bold; }
-        input { padding: 5px; width: 250px; }
-        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
-        #logs { background: #f4f4f4; border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; margin-top: 20px; white-space: pre-wrap; }
-        .error { color: red; }
-        .success { color: green; }
-        .info { color: blue; }
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; text-align: center; padding: 20px; }
+        .container { max-width: 400px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h2 { color: #333; }
+        
+        /* Trạng thái */
+        .status { padding: 10px; margin-bottom: 20px; border-radius: 5px; font-weight: bold; color: white; }
+        .status.disconnected { background-color: #e74c3c; } /* Đỏ */
+        .status.connected { background-color: #2ecc71; }    /* Xanh lá */
+        .status.connecting { background-color: #f1c40f; color: black; } /* Vàng */
+
+        /* Input form */
+        .input-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
+        
+        /* Nút bấm */
+        .btn { border: none; padding: 15px 30px; font-size: 16px; cursor: pointer; border-radius: 5px; margin: 5px; transition: 0.3s; width: 45%; color: white; }
+        .btn-connect { background-color: #3498db; width: 100%; margin-top: 10px; }
+        .btn-on { background-color: #2ecc71; opacity: 0.5; pointer-events: none; } /* Mờ khi chưa kết nối */
+        .btn-off { background-color: #e74c3c; opacity: 0.5; pointer-events: none; }
+
+        /* Khi đã kết nối thì nút sáng lên */
+        .active .btn-on { opacity: 1; pointer-events: auto; }
+        .active .btn-off { opacity: 1; pointer-events: auto; }
+
+        #log { margin-top: 20px; font-size: 12px; color: #666; text-align: left; height: 100px; overflow-y: scroll; border-top: 1px solid #eee; padding-top: 5px;}
     </style>
 </head>
 <body>
 
-    <h2>🔍 CÔNG CỤ TEST KẾT NỐI MQTT</h2>
+<div class="container" id="main-interface">
+    <h2>Điều Khiển Quạt</h2>
+    
+    <div id="status-display" class="status disconnected">Đã ngắt kết nối</div>
 
-    <div class="input-group">
-        <label>Host (Domain/IP):</label>
-        <input type="text" id="host" value="duckdns.org">
-    </div>
-    <div class="input-group">
-        <label>Port:</label>
-        <input type="number" id="port" value="9443">
-    </div>
-    <div class="input-group">
-        <label>Path (Đường dẫn):</label>
-        <input type="text" id="path" value="/mqtt" placeholder="Để trống hoặc /mqtt">
-        <small>(Mosquitto thường là /mqtt hoặc rỗng)</small>
-    </div>
-    <div class="input-group">
-        <label>Username:</label>
-        <input type="text" id="user" value="admin_traiga">
-    </div>
-    <div class="input-group">
-        <label>Password:</label>
-        <input type="password" id="pass" value="">
-    </div>
-    <div class="input-group">
-        <label>Sử dụng SSL (WSS):</label>
-        <input type="checkbox" id="ssl" style="width: auto;"> <span style="color:red">Check nếu dùng WSS, bỏ nếu dùng WS</span>
+    <div id="login-area">
+        <div class="input-group">
+            <label>MQTT User:</label>
+            <input type="text" id="mqtt-user" placeholder="Nhập user MQTT">
+        </div>
+        <div class="input-group">
+            <label>MQTT Password:</label>
+            <input type="password" id="mqtt-pass" placeholder="Nhập pass MQTT">
+        </div>
+        <button class="btn btn-connect" onclick="startConnect()">KẾT NỐI</button>
     </div>
 
-    <button onclick="startTest()">BẮT ĐẦU TEST</button>
+    <hr>
 
-    <div id="logs">Log kết nối sẽ hiện ở đây...</div>
+    <div id="control-area">
+        <button class="btn btn-on" onclick="sendControl('ON')">BẬT QUẠT</button>
+        <button class="btn btn-off" onclick="sendControl('OFF')">TẮT QUẠT</button>
+    </div>
 
-    <script>
-        let client = null;
+    <div id="log">Logs:<br></div>
+</div>
 
-        function log(msg, type = 'black') {
-            const box = document.getElementById('logs');
-            const time = new Date().toLocaleTimeString();
-            box.innerHTML += `<div style="color:${type}">[${time}] ${msg}</div>`;
-            box.scrollTop = box.scrollHeight;
+<script>
+    // --- CẤU HÌNH SERVER ---
+    const mqtt_host = "mqtt.dontseeme.duckdns.org"; 
+    const mqtt_port = 9443; 
+    const mqtt_path = "/mqtt"; // Đường dẫn bắt buộc của EMQX Websocket
+    const use_ssl = true;      // Bắt buộc True cho GitHub Pages
+    const topic_control = "home/quat/control"; // Topic gửi lệnh
+    const topic_status = "home/quat/status";   // Topic nhận trạng thái (nếu có)
+
+    let client = null;
+
+    function log(msg) {
+        const logDiv = document.getElementById('log');
+        logDiv.innerHTML += msg + "<br>";
+        logDiv.scrollTop = logDiv.scrollHeight;
+        console.log(msg);
+    }
+
+    // Hàm bắt đầu kết nối
+    function startConnect() {
+        const user = document.getElementById('mqtt-user').value;
+        const pass = document.getElementById('mqtt-pass').value;
+
+        if (!user || !pass) {
+            alert("Vui lòng nhập User và Password MQTT!");
+            return;
         }
 
-        function startTest() {
-            if (client) {
-                try { client.disconnect(); } catch(e){}
-                client = null;
-            }
+        updateStatus("connecting");
+        
+        // Tạo Client ID ngẫu nhiên
+        const clientId = "web_" + parseInt(Math.random() * 100000);
+        
+        // Khởi tạo đối tượng Paho Client
+        // Cú pháp: host, port, path, clientId
+        client = new Paho.MQTT.Client(mqtt_host, mqtt_port, mqtt_path, clientId);
 
-            const host = document.getElementById('host').value;
-            const port = Number(document.getElementById('port').value);
-            const path = document.getElementById('path').value;
-            const user = document.getElementById('user').value;
-            const pass = document.getElementById('pass').value;
-            const useSSL = document.getElementById('ssl').checked;
+        // Cài đặt các hàm callback
+        client.onConnectionLost = onConnectionLost;
+        client.onMessageArrived = onMessageArrived;
 
-            document.getElementById('logs').innerHTML = ""; // Xóa log cũ
-            
-            const protocol = useSSL ? "wss://" : "ws://";
-            log(`Đang thử kết nối tới: <b>${protocol}${host}:${port}${path}</b>`, 'info');
+        // Tùy chọn kết nối
+        const options = {
+            useSSL: use_ssl,
+            userName: user,
+            password: pass,
+            onSuccess: onConnect,
+            onFailure: onFail,
+            keepAliveInterval: 30,
+            timeout: 10
+        };
 
-            const clientId = "test_client_" + Math.random().toString(16).substr(2, 8);
-            
-            // Cấu hình Client với Path (quan trọng)
-            client = new Paho.MQTT.Client(host, port, path, clientId);
-
-            const options = {
-                timeout: 10, // Giây
-                useSSL: useSSL,
-                onSuccess: () => {
-                    log("✅ KẾT NỐI THÀNH CÔNG!", "success");
-                    log("Server đã cấu hình đúng WebSockets.", "success");
-                },
-                onFailure: (e) => {
-                    log("❌ KẾT NỐI THẤT BẠI!", "error");
-                    log(`Mã lỗi: ${e.errorCode}`, "error");
-                    log(`Chi tiết: ${e.errorMessage}`, "error");
-                    analyzeError(e.errorCode, useSSL, port);
-                }
-            };
-
-            if (user) {
-                options.userName = user;
-                options.password = pass;
-            }
-
-            try {
-                client.connect(options);
-            } catch (e) {
-                log(`❌ Lỗi khởi tạo: ${e.message}`, "error");
-            }
+        log(`Đang kết nối tới ${mqtt_host}:${mqtt_port}${mqtt_path}...`);
+        try {
+            client.connect(options);
+        } catch (e) {
+            log("Lỗi code: " + e);
         }
+    }
 
-        function analyzeError(code, ssl, port) {
-            if (code === 7 || code === 8) { // Socket Error
-                log("------------------------------------------------", "black");
-                log("💡 GỢI Ý KHẮC PHỤC:", "blue");
-                log("1. Kiểm tra xem Server đã bật 'protocol websockets' chưa? (Nếu chỉ là 'protocol mqtt' thì web không chạy được).", "black");
-                log(`2. Nếu bạn đang dùng SSL (WSS), chứng chỉ SSL có hợp lệ không?`, "black");
-                log(`3. Thử đổi 'Path' thành rỗng hoặc '/mqtt'.`, "black");
-                if(ssl) {
-                    log("4. Bạn đang bật SSL. Hãy thử truy cập trực tiếp: https://" + document.getElementById('host').value + ":" + port + " trên trình duyệt. Nếu trình duyệt báo 'Không an toàn', kết nối WSS sẽ bị chặn.", "red");
-                }
-            }
+    // Khi kết nối thành công
+    function onConnect() {
+        updateStatus("connected");
+        log("Kết nối THÀNH CÔNG!");
+        
+        // Kích hoạt nút bấm
+        document.getElementById('main-interface').classList.add('active');
+        // Ẩn khung đăng nhập cho gọn (tùy chọn)
+        document.getElementById('login-area').style.display = 'none';
+
+        // Subscribe để nhận phản hồi từ thiết bị (nếu cần)
+        client.subscribe(topic_status);
+    }
+
+    // Khi kết nối thất bại
+    function onFail(responseObject) {
+        updateStatus("disconnected");
+        log("Lỗi kết nối: " + responseObject.errorMessage);
+        alert("Không kết nối được! Kiểm tra lại User/Pass hoặc Server.");
+    }
+
+    // Khi bị mất kết nối đột ngột
+    function onConnectionLost(responseObject) {
+        if (responseObject.errorCode !== 0) {
+            updateStatus("disconnected");
+            log("Mất kết nối: " + responseObject.errorMessage);
+            document.getElementById('main-interface').classList.remove('active');
+            document.getElementById('login-area').style.display = 'block';
         }
-    </script>
+    }
+
+    // Khi nhận được tin nhắn từ Server
+    function onMessageArrived(message) {
+        log("Nhận tin: " + message.payloadString + " (Topic: " + message.destinationName + ")");
+    }
+
+    // Hàm gửi lệnh điều khiển
+    function sendControl(cmd) {
+        if (!client || !client.isConnected()) {
+            alert("Chưa kết nối MQTT!");
+            return;
+        }
+        
+        // Tạo tin nhắn
+        // cmd sẽ là 'ON' hoặc 'OFF'
+        const message = new Paho.MQTT.Message(cmd);
+        message.destinationName = topic_control;
+        client.send(message);
+        log("Đã gửi lệnh: " + cmd);
+    }
+
+    // Hàm cập nhật giao diện trạng thái
+    function updateStatus(state) {
+        const statusDiv = document.getElementById('status-display');
+        statusDiv.className = 'status ' + state;
+        if(state === 'connected') statusDiv.innerHTML = "ĐÃ KẾT NỐI";
+        else if(state === 'connecting') statusDiv.innerHTML = "ĐANG KẾT NỐI...";
+        else statusDiv.innerHTML = "ĐÃ NGẮT KẾT NỐI";
+    }
+</script>
+
 </body>
 </html>
