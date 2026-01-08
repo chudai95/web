@@ -2,663 +2,126 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hệ Thống Trại Gà</title>
-    
-    <!-- Thư viện CSS & JS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
-
+    <title>MQTT Connection Tester</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <style>
-        :root {
-            --primary-color: #4361ee;
-            --success-color: #2ec4b6;
-            --warning-color: #ff9f1c;
-            --danger-color: #e71d36;
-            --bg-color: #f3f6fd;
-            --card-bg: #ffffff;
-            --text-main: #2b2d42;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            font-family: 'Poppins', sans-serif;
-            color: var(--text-main);
-            -webkit-font-smoothing: antialiased;
-            overflow-x: hidden;
-        }
-
-        /* --- Màn hình đăng nhập --- */
-        #login-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #4361ee 0%, #3f37c9 100%);
-            z-index: 9999;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .login-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 24px;
-            padding: 40px 30px;
-            width: 90%; max-width: 400px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-            text-align: center;
-        }
-
-        /* --- Dashboard --- */
-        .dashboard-container { max-width: 800px; margin: 0 auto; padding-bottom: 80px; }
-        
-        .glass-card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.5);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
-            transition: transform 0.2s;
-        }
-        
-        /* Hiển thị nhiệt độ */
-        .temp-value {
-            font-size: 3.5rem; font-weight: 700;
-            background: -webkit-linear-gradient(#e71d36, #ff9f1c);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            line-height: 1;
-            font-variant-numeric: tabular-nums;
-        }
-
-        /* Nút chuyển chế độ Auto/Manual */
-        .mode-switch-container {
-            background: #edf2f4; border-radius: 50px; padding: 5px;
-            display: flex; position: relative;
-        }
-        .mode-btn {
-            flex: 1; border: none; background: transparent;
-            padding: 10px; border-radius: 50px;
-            font-weight: 600; font-size: 0.9rem;
-            color: #8d99ae; transition: all 0.3s; z-index: 2;
-        }
-        .mode-btn.active { color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .mode-bg-slider {
-            position: absolute; top: 5px; left: 5px; height: calc(100% - 10px); width: calc(50% - 5px);
-            border-radius: 50px; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 1;
-        }
-        .mode-auto-active .mode-bg-slider { background: var(--primary-color); transform: translateX(0); }
-        .mode-manual-active .mode-bg-slider { background: var(--warning-color); transform: translateX(100%); }
-
-        /* --- Quạt --- */
-        .fan-card {
-            padding: 20px; text-align: center; height: 100%;
-            position: relative; overflow: hidden;
-        }
-        .fan-icon-wrapper {
-            width: 80px; height: 80px; margin: 0 auto 15px;
-            background: #f8f9fa; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            transition: all 0.3s;
-        }
-        .fan-icon { font-size: 2.5rem; color: #adb5bd; transition: color 0.3s; }
-        
-        /* Trạng thái quạt bật */
-        .fan-active .fan-icon-wrapper { background: rgba(46, 196, 182, 0.1); box-shadow: 0 0 20px rgba(46, 196, 182, 0.2); }
-        .fan-active .fan-icon { color: var(--success-color); animation: spin 1s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        /* Switch & Slider */
-        .form-switch .form-check-input { width: 3em; height: 1.5em; cursor: pointer; }
-        .form-switch .form-check-input:checked { background-color: var(--success-color); border-color: var(--success-color); }
-
-        input[type=range] {
-            height: 6px; border-radius: 5px; background: #dee2e6;
-            outline: none; -webkit-appearance: none; width: 100%;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 20px; height: 20px;
-            background: var(--primary-color); border-radius: 50%;
-            cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            transition: transform 0.1s;
-        }
-
-        /* --- KHÓA KHI AUTO (Vẫn nhìn thấy, không bấm được) --- */
-        .control-locked { position: relative; }
-        .control-locked::after {
-            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: transparent; z-index: 10; cursor: not-allowed;
-        }
-        /* Làm mờ nút bấm để biết đang khóa */
-        .control-locked input, .control-locked .form-check-input { opacity: 0.5; filter: grayscale(100%); }
-        /* Giữ nguyên độ sáng cho Icon và Text để quan sát */
-        .control-locked .fan-icon, .control-locked .status-text, .control-locked .fan-icon-wrapper, .control-locked h6, .control-locked .fw-bold {
-            opacity: 1 !important; filter: none !important;
-        }
-        .lock-badge {
-            position: absolute; top: -15px; right: 10px;
-            z-index: 11; background: var(--primary-color); color: white;
-            padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
-            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
-            display: none; align-items: center; gap: 5px;
-            animation: fadeIn 0.5s;
-        }
-        .control-locked .lock-badge { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Footer Status */
-        .status-bar {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: white; padding: 10px 20px;
-            border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;
-            font-size: 0.85rem; color: #6c757d; z-index: 100;
-        }
-        .status-dot { width: 10px; height: 10px; background: #ccc; border-radius: 50%; display: inline-block; margin-right: 5px; }
-        .status-dot.online { background: var(--success-color); box-shadow: 0 0 10px var(--success-color); }
-
-        /* --- Modal Cài đặt --- */
-        .modal-content { border-radius: 20px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
-        .modal-header { border-bottom: 1px solid #f0f0f0; padding: 20px; }
-        .modal-body { padding: 20px; background: #f8f9fa; }
-        .setting-group { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
-        .setting-label { font-size: 0.85rem; font-weight: 600; color: #6c757d; margin-bottom: 5px; display: block; }
-        .form-control-sm { border-radius: 8px; border: 1px solid #dee2e6; padding: 8px 12px; }
+        body { font-family: monospace; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .input-group { margin-bottom: 10px; }
+        label { display: inline-block; width: 150px; font-weight: bold; }
+        input { padding: 5px; width: 250px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
+        #logs { background: #f4f4f4; border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; margin-top: 20px; white-space: pre-wrap; }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
     </style>
 </head>
 <body>
 
-<!-- 1. MÀN HÌNH ĐĂNG NHẬP -->
-<div id="login-screen">
-    <div class="login-card">
-        <div class="mb-4">
-            <div style="width: 80px; height: 80px; background: #eef2ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
-                <i class="fas fa-warehouse text-primary" style="font-size: 2.5rem;"></i>
-            </div>
-        </div>
-        <h4 class="fw-bold mb-1">Trại Gà Khu A</h4>
-        <p class="text-muted mb-4 small">Hệ thống điều khiển thông minh</p>
-        
-        <div class="form-floating mb-3 text-start">
-            <input type="password" class="form-control rounded-4" id="input-pass" placeholder="Mật khẩu">
-            <label>Nhập mật khẩu MQTT</label>
-        </div>
-        
-        <button class="btn btn-primary w-100 py-3 rounded-4 fw-bold shadow-sm" onclick="connectMQTT()">
-            <i class="fas fa-bolt me-2"></i>KẾT NỐI HỆ THỐNG
-        </button>
-        
-        <div class="mt-3">
-            <button class="btn btn-link text-decoration-none text-muted small" onclick="openSettings()">
-                <i class="fas fa-cog me-1"></i> Cấu hình Server
-            </button>
-        </div>
-        <div id="login-error" class="text-danger mt-3 small fw-bold"></div>
-    </div>
-</div>
+    <h2>🔍 CÔNG CỤ TEST KẾT NỐI MQTT</h2>
 
-<!-- 2. GIAO DIỆN CHÍNH -->
-<div id="main-dashboard" class="container dashboard-container py-4" style="display: none;">
-    
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h5 class="fw-bold m-0 text-dark">Dashboard</h5>
-            <small class="text-muted" id="current-time">--:--</small>
-        </div>
-        <div>
-            <button class="btn btn-light rounded-circle shadow-sm me-2" onclick="openSettings()">
-                <i class="fas fa-cog text-secondary"></i>
-            </button>
-            <button class="btn btn-light rounded-circle shadow-sm" onclick="location.reload()">
-                <i class="fas fa-sync-alt text-primary"></i>
-            </button>
-        </div>
+    <div class="input-group">
+        <label>Host (Domain/IP):</label>
+        <input type="text" id="host" value="duckdns.org">
+    </div>
+    <div class="input-group">
+        <label>Port:</label>
+        <input type="number" id="port" value="9443">
+    </div>
+    <div class="input-group">
+        <label>Path (Đường dẫn):</label>
+        <input type="text" id="path" value="/mqtt" placeholder="Để trống hoặc /mqtt">
+        <small>(Mosquitto thường là /mqtt hoặc rỗng)</small>
+    </div>
+    <div class="input-group">
+        <label>Username:</label>
+        <input type="text" id="user" value="admin_traiga">
+    </div>
+    <div class="input-group">
+        <label>Password:</label>
+        <input type="password" id="pass" value="">
+    </div>
+    <div class="input-group">
+        <label>Sử dụng SSL (WSS):</label>
+        <input type="checkbox" id="ssl" style="width: auto;"> <span style="color:red">Check nếu dùng WSS, bỏ nếu dùng WS</span>
     </div>
 
-    <!-- Thông số chính -->
-    <div class="row g-3 mb-4">
-        <!-- Nhiệt độ -->
-        <div class="col-12 col-md-6">
-            <div class="glass-card h-100 d-flex align-items-center justify-content-between p-4">
-                <div>
-                    <div class="text-muted small fw-bold text-uppercase mb-1">Nhiệt độ chuồng</div>
-                    <div class="d-flex align-items-baseline">
-                        <span id="val-temp" class="temp-value">--.--</span>
-                        <span class="fs-4 fw-bold text-secondary ms-1">°C</span>
-                    </div>
-                </div>
-                <div class="text-end">
-                    <div class="text-muted small fw-bold mb-2">CÀI ĐẶT</div>
-                    <div class="d-flex align-items-center bg-light rounded-pill p-1 border">
-                        <button class="btn btn-sm btn-white rounded-circle shadow-none text-primary" onclick="changeSetTemp(-0.1)"><i class="fas fa-minus"></i></button>
-                        <input type="text" id="set-temp" class="form-control border-0 bg-transparent text-center fw-bold p-0" style="width: 60px;" value="28.00" readonly>
-                        <button class="btn btn-sm btn-white rounded-circle shadow-none text-primary" onclick="changeSetTemp(0.1)"><i class="fas fa-plus"></i></button>
-                    </div>
-                    <button class="btn btn-primary btn-sm rounded-pill w-100 mt-2 py-1" onclick="publishSetTemp()">Lưu</button>
-                </div>
-            </div>
-        </div>
+    <button onclick="startTest()">BẮT ĐẦU TEST</button>
 
-        <!-- Chế độ -->
-        <div class="col-12 col-md-6">
-            <div class="glass-card h-100 p-4 d-flex flex-column justify-content-center">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-muted small fw-bold text-uppercase">Chế độ vận hành</span>
-                    <i class="fas fa-robot text-muted"></i>
-                </div>
-                
-                <div id="mode-container" class="mode-switch-container mode-manual-active">
-                    <div class="mode-bg-slider"></div>
-                    <button class="mode-btn" id="btn-auto" onclick="setMode('AUTO')">TỰ ĐỘNG</button>
-                    <button class="mode-btn active" id="btn-manual" onclick="setMode('MANUAL')">THỦ CÔNG</button>
-                </div>
-                <div class="mt-3 text-center small text-muted fst-italic" id="mode-desc">
-                    Điều khiển thiết bị bằng tay
-                </div>
-            </div>
-        </div>
-    </div>
+    <div id="logs">Log kết nối sẽ hiện ở đây...</div>
 
-    <!-- Khu vực điều khiển -->
-    <div id="control-area" class="position-relative">
-        <div class="lock-badge"><i class="fas fa-lock"></i> HỆ THỐNG TỰ ĐỘNG</div>
-        
-        <!-- Quạt Biến Tần (Fan 1) -->
-        <div class="glass-card p-4 mb-4 border-start border-4 border-primary">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div class="d-flex align-items-center">
-                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">1</div>
-                    <div>
-                        <h6 class="fw-bold m-0">Quạt Biến Tần</h6>
-                        <small class="text-muted">Điều tốc VFD</small>
-                    </div>
-                </div>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="sw-fan-1" onchange="controlFan(1, this.checked)">
-                </div>
-            </div>
+    <script>
+        let client = null;
 
-            <div class="row align-items-center">
-                <div class="col-4 text-center">
-                    <div id="wrapper-fan-1" class="fan-icon-wrapper mb-0" style="width: 70px; height: 70px;">
-                        <i id="icon-fan-1" class="fas fa-fan fan-icon" style="font-size: 2rem;"></i>
-                    </div>
-                </div>
-                <div class="col-8">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="fw-bold text-secondary small">CÔNG SUẤT</span>
-                        <span class="fw-bold text-primary" id="lbl-speed-1">0%</span>
-                    </div>
-                    <input type="range" class="form-range" id="sld-fan-1" min="0" max="100" value="0" 
-                           onchange="controlVFD(1, this.value)" 
-                           oninput="updateFanSpeedUI(this.value)">
-                </div>
-            </div>
-        </div>
+        function log(msg, type = 'black') {
+            const box = document.getElementById('logs');
+            const time = new Date().toLocaleTimeString();
+            box.innerHTML += `<div style="color:${type}">[${time}] ${msg}</div>`;
+            box.scrollTop = box.scrollHeight;
+        }
 
-        <!-- Lưới Quạt Thường (Fan 2-5) -->
-        <h6 class="text-muted fw-bold mb-3 ps-2">QUẠT THÔNG GIÓ (ON/OFF)</h6>
-        <div class="row g-3">
-            <script>
-                for(let i=2; i<=5; i++){
-                    document.write(`
-                    <div class="col-6 col-md-3">
-                        <div class="glass-card fan-card" id="card-fan-${i}">
-                            <div class="d-flex justify-content-between mb-3">
-                                <span class="badge bg-light text-dark border">Q${i}</span>
-                                <div class="form-check form-switch m-0">
-                                    <input class="form-check-input" type="checkbox" id="sw-fan-${i}" onchange="controlFan(${i}, this.checked)" style="width: 2.5em; height: 1.2em;">
-                                </div>
-                            </div>
-                            <div class="fan-icon-wrapper">
-                                <i id="icon-fan-${i}" class="fas fa-fan fan-icon"></i>
-                            </div>
-                            <h6 class="fw-bold text-secondary m-0 status-text" id="txt-fan-${i}">Đang tắt</h6>
-                        </div>
-                    </div>`);
+        function startTest() {
+            if (client) {
+                try { client.disconnect(); } catch(e){}
+                client = null;
+            }
+
+            const host = document.getElementById('host').value;
+            const port = Number(document.getElementById('port').value);
+            const path = document.getElementById('path').value;
+            const user = document.getElementById('user').value;
+            const pass = document.getElementById('pass').value;
+            const useSSL = document.getElementById('ssl').checked;
+
+            document.getElementById('logs').innerHTML = ""; // Xóa log cũ
+            
+            const protocol = useSSL ? "wss://" : "ws://";
+            log(`Đang thử kết nối tới: <b>${protocol}${host}:${port}${path}</b>`, 'info');
+
+            const clientId = "test_client_" + Math.random().toString(16).substr(2, 8);
+            
+            // Cấu hình Client với Path (quan trọng)
+            client = new Paho.MQTT.Client(host, port, path, clientId);
+
+            const options = {
+                timeout: 10, // Giây
+                useSSL: useSSL,
+                onSuccess: () => {
+                    log("✅ KẾT NỐI THÀNH CÔNG!", "success");
+                    log("Server đã cấu hình đúng WebSockets.", "success");
+                },
+                onFailure: (e) => {
+                    log("❌ KẾT NỐI THẤT BẠI!", "error");
+                    log(`Mã lỗi: ${e.errorCode}`, "error");
+                    log(`Chi tiết: ${e.errorMessage}`, "error");
+                    analyzeError(e.errorCode, useSSL, port);
                 }
-            </script>
-        </div>
-    </div>
-</div>
+            };
 
-<!-- Footer Status Bar -->
-<div class="status-bar" id="status-bar" style="display: none;">
-    <div><span class="status-dot" id="conn-dot"></span> <span id="conn-text">Đang kết nối...</span></div>
-    <div class="fw-bold text-primary">MQTT v3.1</div>
-</div>
+            if (user) {
+                options.userName = user;
+                options.password = pass;
+            }
 
-<!-- 3. MODAL CÀI ĐẶT -->
-<div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold"><i class="fas fa-sliders-h me-2"></i>Cấu hình Hệ thống</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="setting-group">
-                    <h6 class="text-primary fw-bold mb-3"><i class="fas fa-server me-2"></i>MQTT Broker</h6>
-                    <div class="row g-2">
-                        <div class="col-8">
-                            <label class="setting-label">Host (Địa chỉ)</label>
-                            <input type="text" class="form-control form-control-sm" id="cfg-host" placeholder="vd: duckdns.org">
-                        </div>
-                        <div class="col-4">
-                            <label class="setting-label">Port</label>
-                            <input type="number" class="form-control form-control-sm" id="cfg-port" placeholder="8083">
-                        </div>
-                    </div>
-                    
-                    <!-- Tùy chọn SSL -->
-                    <div class="d-flex justify-content-between align-items-center mt-3 bg-light p-2 rounded border">
-                        <label class="setting-label mb-0 text-dark" for="cfg-ssl">
-                            <i class="fas fa-lock me-1"></i> Sử dụng SSL (WSS)
-                        </label>
-                        <div class="form-check form-switch m-0">
-                            <input class="form-check-input" type="checkbox" id="cfg-ssl" style="width: 2.5em;">
-                        </div>
-                    </div>
-
-                    <div class="mt-3">
-                        <label class="setting-label">Topic Prefix (Gốc)</label>
-                        <input type="text" class="form-control form-control-sm" id="cfg-topic" placeholder="vd: traiga/khu_a">
-                    </div>
-                </div>
-
-                <div class="setting-group">
-                    <h6 class="text-primary fw-bold mb-3"><i class="fas fa-user-shield me-2"></i>Xác thực</h6>
-                    <div class="mb-2">
-                        <label class="setting-label">Username</label>
-                        <input type="text" class="form-control form-control-sm" id="cfg-user" placeholder="admin">
-                    </div>
-                    <small class="text-muted fst-italic">* Mật khẩu được nhập tại màn hình đăng nhập.</small>
-                </div>
-            </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" onclick="saveSettings()">Lưu Cài Đặt</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    // --- CẤU HÌNH MẶC ĐỊNH ---
-    const DEFAULT_CONFIG = {
-        host: "dontseeme.zapto.org",       
-        port: 9443,                // Port mặc định cho WSS
-        useSSL: true,              // Mặc định bật SSL
-        username: "noobies",  
-        topicPrefix: "traiga/khu_a" 
-    };
-
-    let currentConfig = {...DEFAULT_CONFIG};
-    let client;
-    let isConnected = false;
-    let settingsModal;
-
-    // --- KHỞI TẠO ---
-    window.onload = function() {
-        loadSettings();
-        settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
-        
-        // Cập nhật giờ
-        setInterval(() => {
-            const now = new Date();
-            document.getElementById('current-time').innerText = now.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
-        }, 1000);
-    };
-
-    // --- QUẢN LÝ CÀI ĐẶT (LOCAL STORAGE) ---
-    function loadSettings() {
-        const saved = localStorage.getItem('mqtt_settings');
-        if (saved) {
-            currentConfig = JSON.parse(saved);
-        }
-        // Điền vào form modal
-        document.getElementById('cfg-host').value = currentConfig.host;
-        document.getElementById('cfg-port').value = currentConfig.port;
-        document.getElementById('cfg-topic').value = currentConfig.topicPrefix;
-        document.getElementById('cfg-user').value = currentConfig.username;
-        document.getElementById('cfg-ssl').checked = currentConfig.useSSL;
-    }
-
-    function saveSettings() {
-        currentConfig.host = document.getElementById('cfg-host').value || DEFAULT_CONFIG.host;
-        currentConfig.port = parseInt(document.getElementById('cfg-port').value) || DEFAULT_CONFIG.port;
-        currentConfig.topicPrefix = document.getElementById('cfg-topic').value || DEFAULT_CONFIG.topicPrefix;
-        currentConfig.username = document.getElementById('cfg-user').value || DEFAULT_CONFIG.username;
-        currentConfig.useSSL = document.getElementById('cfg-ssl').checked;
-
-        localStorage.setItem('mqtt_settings', JSON.stringify(currentConfig));
-        
-        settingsModal.hide();
-        alert("Đã lưu cấu hình! Vui lòng kết nối lại.");
-        
-        // Nếu đang kết nối thì ngắt để kết nối lại với cấu hình mới
-        if(isConnected) {
-            location.reload();
-        }
-    }
-
-    function openSettings() {
-        loadSettings(); // Load lại giá trị mới nhất
-        settingsModal.show();
-    }
-
-    // --- MQTT LOGIC ---
-    document.getElementById("input-pass").addEventListener("keypress", function(event) {
-        if (event.key === "Enter") connectMQTT();
-    });
-
-    function connectMQTT() {
-        const password = document.getElementById('input-pass').value;
-        const errorDiv = document.getElementById('login-error');
-        const btn = document.querySelector('#login-screen button');
-
-        if (!password) {
-            errorDiv.innerText = "Vui lòng nhập mật khẩu!";
-            return;
-        }
-
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang kết nối...';
-        btn.disabled = true;
-        errorDiv.innerText = "";
-
-        const clientId = "web_client_" + Math.random().toString(16).substr(2, 8);
-        
-        // Khởi tạo Client
-        client = new Paho.MQTT.Client(currentConfig.host, Number(currentConfig.port), clientId);
-
-        client.onConnectionLost = onConnectionLost;
-        client.onMessageArrived = onMessageArrived;
-
-        const options = {
-            onSuccess: onConnectSuccess,
-            onFailure: (e) => {
-                btn.innerHTML = '<i class="fas fa-bolt me-2"></i>KẾT NỐI HỆ THỐNG';
-                btn.disabled = false;
-                errorDiv.innerText = "Lỗi: " + e.errorMessage + " (Kiểm tra lại Host/Port/SSL)";
-            },
-            userName: currentConfig.username,
-            password: password,
-            useSSL: currentConfig.useSSL, // Sử dụng cấu hình SSL
-            keepAliveInterval: 30
-        };
-
-        try {
-            client.connect(options);
-        } catch (e) {
-            errorDiv.innerText = "Lỗi khởi tạo: " + e.message;
-        }
-    }
-
-    function onConnectSuccess() {
-        isConnected = true;
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('main-dashboard').style.display = 'block';
-        document.getElementById('status-bar').style.display = 'flex';
-        updateStatus(true);
-        
-        const p = currentConfig.topicPrefix;
-        client.subscribe(p + "/+/status");
-        client.subscribe(p + "/fan1/speed_status");
-        client.subscribe(p + "/sensor/temp");
-        client.subscribe(p + "/setting/temp");
-        client.subscribe(p + "/system/mode");
-    }
-
-    function onConnectionLost(responseObject) {
-        isConnected = false;
-        updateStatus(false);
-        if (responseObject.errorCode !== 0) {
-            console.log("Mất kết nối: " + responseObject.errorMessage);
-        }
-    }
-
-    function updateStatus(online) {
-        const dot = document.getElementById('conn-dot');
-        const txt = document.getElementById('conn-text');
-        const protocol = currentConfig.useSSL ? "wss://" : "ws://";
-        if(online) {
-            dot.classList.add('online');
-            txt.innerText = "Đã kết nối: " + protocol + currentConfig.host;
-            txt.classList.add('text-success');
-        } else {
-            dot.classList.remove('online');
-            txt.innerText = "Mất kết nối!";
-            txt.classList.remove('text-success'); txt.classList.add('text-danger');
-        }
-    }
-
-    // --- XỬ LÝ DỮ LIỆU ---
-    function onMessageArrived(message) {
-        const topic = message.destinationName;
-        const payload = message.payloadString;
-        const p = currentConfig.topicPrefix;
-
-        // Mode
-        if (topic === `${p}/system/mode`) updateModeUI(payload);
-
-        // Temp (2 số thập phân)
-        if (topic === `${p}/sensor/temp`) {
-            document.getElementById('val-temp').innerText = parseFloat(payload).toFixed(2);
-        }
-        if (topic === `${p}/setting/temp`) {
-            document.getElementById('set-temp').value = parseFloat(payload).toFixed(2);
-        }
-
-        // Fans ON/OFF
-        for (let i = 1; i <= 5; i++) {
-            if (topic === `${p}/fan${i}/status`) {
-                const isOn = (payload === "ON");
-                document.getElementById(`sw-fan-${i}`).checked = isOn;
-                
-                const card = i > 1 ? document.getElementById(`card-fan-${i}`) : document.getElementById(`wrapper-fan-1`).parentElement.parentElement;
-                const txt = document.getElementById(`txt-fan-${i}`);
-                
-                if (i > 1) {
-                    if (isOn) {
-                        card.classList.add("fan-active");
-                        txt.innerText = "Đang chạy"; txt.classList.add("text-success"); txt.classList.remove("text-secondary");
-                    } else {
-                        card.classList.remove("fan-active");
-                        txt.innerText = "Đang tắt"; txt.classList.remove("text-success"); txt.classList.add("text-secondary");
-                    }
-                } else {
-                    const wrapper = document.getElementById('wrapper-fan-1');
-                    if(isOn) wrapper.parentElement.parentElement.classList.add("fan-active-1");
-                }
+            try {
+                client.connect(options);
+            } catch (e) {
+                log(`❌ Lỗi khởi tạo: ${e.message}`, "error");
             }
         }
 
-        // Fan 1 Speed
-        if (topic === `${p}/fan1/speed_status`) {
-            const speed = parseInt(payload);
-            document.getElementById('sld-fan-1').value = speed;
-            updateFanSpeedUI(speed);
+        function analyzeError(code, ssl, port) {
+            if (code === 7 || code === 8) { // Socket Error
+                log("------------------------------------------------", "black");
+                log("💡 GỢI Ý KHẮC PHỤC:", "blue");
+                log("1. Kiểm tra xem Server đã bật 'protocol websockets' chưa? (Nếu chỉ là 'protocol mqtt' thì web không chạy được).", "black");
+                log(`2. Nếu bạn đang dùng SSL (WSS), chứng chỉ SSL có hợp lệ không?`, "black");
+                log(`3. Thử đổi 'Path' thành rỗng hoặc '/mqtt'.`, "black");
+                if(ssl) {
+                    log("4. Bạn đang bật SSL. Hãy thử truy cập trực tiếp: https://" + document.getElementById('host').value + ":" + port + " trên trình duyệt. Nếu trình duyệt báo 'Không an toàn', kết nối WSS sẽ bị chặn.", "red");
+                }
+            }
         }
-    }
-
-    // --- UI HELPERS ---
-    function updateFanSpeedUI(val) {
-        document.getElementById('lbl-speed-1').innerText = val + "%";
-        const icon = document.getElementById('icon-fan-1');
-        const wrapper = document.getElementById('wrapper-fan-1');
-        
-        if (val > 0 && document.getElementById('sw-fan-1').checked) {
-            wrapper.style.background = `rgba(46, 196, 182, ${0.1 + (val/200)})`;
-            icon.classList.add('text-success');
-            icon.style.animation = `spin ${1.1 - (val/100)}s linear infinite`;
-        } else {
-            wrapper.style.background = '#f8f9fa';
-            icon.classList.remove('text-success');
-            icon.style.animation = 'none';
-        }
-    }
-
-    function setMode(mode) {
-        if(!isConnected) return;
-        sendMqtt(`${currentConfig.topicPrefix}/system/mode`, mode, true);
-        updateModeUI(mode);
-    }
-
-    function updateModeUI(mode) {
-        const container = document.getElementById('mode-container');
-        const btnAuto = document.getElementById('btn-auto');
-        const btnManual = document.getElementById('btn-manual');
-        const area = document.getElementById('control-area');
-        const desc = document.getElementById('mode-desc');
-
-        if (mode === 'AUTO') {
-            container.classList.add('mode-auto-active'); container.classList.remove('mode-manual-active');
-            btnAuto.classList.add('active'); btnManual.classList.remove('active');
-            area.classList.add('control-locked');
-            desc.innerText = "Hệ thống tự động điều chỉnh theo cảm biến"; desc.classList.add('text-primary');
-        } else {
-            container.classList.add('mode-manual-active'); container.classList.remove('mode-auto-active');
-            btnManual.classList.add('active'); btnAuto.classList.remove('active');
-            area.classList.remove('control-locked');
-            desc.innerText = "Bạn đang toàn quyền điều khiển thiết bị"; desc.classList.remove('text-primary');
-        }
-    }
-
-    function controlFan(id, state) {
-        if(!isConnected) return;
-        if(document.getElementById('control-area').classList.contains('control-locked')) {
-            document.getElementById(`sw-fan-${id}`).checked = !state; 
-            return;
-        }
-        sendMqtt(`${currentConfig.topicPrefix}/fan${id}/set`, state ? "ON" : "OFF");
-        if(id === 1) updateFanSpeedUI(document.getElementById('sld-fan-1').value);
-    }
-
-    function controlVFD(id, val) {
-        if(!isConnected) return;
-        sendMqtt(`${currentConfig.topicPrefix}/fan${id}/speed_set`, val.toString());
-    }
-
-    function changeSetTemp(delta) {
-        const input = document.getElementById('set-temp');
-        let val = parseFloat(input.value) || 25.00;
-        val = val + delta;
-        input.value = val.toFixed(2);
-    }
-
-    function publishSetTemp() {
-        if(!isConnected) return;
-        const val = document.getElementById('set-temp').value;
-        sendMqtt(`${currentConfig.topicPrefix}/setting/temp`, val);
-        const btn = event.target;
-        const oldText = btn.innerText;
-        btn.innerText = "Đã lưu!";
-        setTimeout(() => btn.innerText = oldText, 1000);
-    }
-
-    function sendMqtt(topic, payload, retained = false) {
-        const message = new Paho.MQTT.Message(payload);
-        message.destinationName = topic;
-        message.retained = retained;
-        client.send(message);
-    }
-</script>
+    </script>
 </body>
 </html>
