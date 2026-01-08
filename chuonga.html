@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Farm Control</title>
+    <title>Hệ Thống Trại Gà</title>
     
-    <!-- Thư viện -->
+    <!-- Thư viện CSS & JS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -27,9 +27,10 @@
             font-family: 'Poppins', sans-serif;
             color: var(--text-main);
             -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
         }
 
-        /* --- Login Screen --- */
+        /* --- Màn hình đăng nhập --- */
         #login-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(135deg, #4361ee 0%, #3f37c9 100%);
@@ -45,7 +46,7 @@
             text-align: center;
         }
 
-        /* --- Dashboard Components --- */
+        /* --- Dashboard --- */
         .dashboard-container { max-width: 800px; margin: 0 auto; padding-bottom: 80px; }
         
         .glass-card {
@@ -56,7 +57,7 @@
             transition: transform 0.2s;
         }
         
-        /* --- Temperature Display --- */
+        /* Hiển thị nhiệt độ */
         .temp-value {
             font-size: 3.5rem; font-weight: 700;
             background: -webkit-linear-gradient(#e71d36, #ff9f1c);
@@ -66,7 +67,7 @@
             font-variant-numeric: tabular-nums;
         }
 
-        /* --- Mode Switch --- */
+        /* Nút chuyển chế độ Auto/Manual */
         .mode-switch-container {
             background: #edf2f4; border-radius: 50px; padding: 5px;
             display: flex; position: relative;
@@ -85,7 +86,7 @@
         .mode-auto-active .mode-bg-slider { background: var(--primary-color); transform: translateX(0); }
         .mode-manual-active .mode-bg-slider { background: var(--warning-color); transform: translateX(100%); }
 
-        /* --- Fan Controls --- */
+        /* --- Quạt --- */
         .fan-card {
             padding: 20px; text-align: center; height: 100%;
             position: relative; overflow: hidden;
@@ -98,10 +99,12 @@
         }
         .fan-icon { font-size: 2.5rem; color: #adb5bd; transition: color 0.3s; }
         
+        /* Trạng thái quạt bật */
         .fan-active .fan-icon-wrapper { background: rgba(46, 196, 182, 0.1); box-shadow: 0 0 20px rgba(46, 196, 182, 0.2); }
         .fan-active .fan-icon { color: var(--success-color); animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
+        /* Switch & Slider */
         .form-switch .form-check-input { width: 3em; height: 1.5em; cursor: pointer; }
         .form-switch .form-check-input:checked { background-color: var(--success-color); border-color: var(--success-color); }
 
@@ -116,13 +119,15 @@
             transition: transform 0.1s;
         }
 
-        /* --- LOCKED OVERLAY (AUTO MODE) --- */
+        /* --- KHÓA KHI AUTO (Vẫn nhìn thấy, không bấm được) --- */
         .control-locked { position: relative; }
         .control-locked::after {
             content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: transparent; z-index: 10; cursor: not-allowed;
         }
+        /* Làm mờ nút bấm để biết đang khóa */
         .control-locked input, .control-locked .form-check-input { opacity: 0.5; filter: grayscale(100%); }
+        /* Giữ nguyên độ sáng cho Icon và Text để quan sát */
         .control-locked .fan-icon, .control-locked .status-text, .control-locked .fan-icon-wrapper, .control-locked h6, .control-locked .fw-bold {
             opacity: 1 !important; filter: none !important;
         }
@@ -147,7 +152,7 @@
         .status-dot { width: 10px; height: 10px; background: #ccc; border-radius: 50%; display: inline-block; margin-right: 5px; }
         .status-dot.online { background: var(--success-color); box-shadow: 0 0 10px var(--success-color); }
 
-        /* --- Settings Modal --- */
+        /* --- Modal Cài đặt --- */
         .modal-content { border-radius: 20px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
         .modal-header { border-bottom: 1px solid #f0f0f0; padding: 20px; }
         .modal-body { padding: 20px; background: #f8f9fa; }
@@ -337,10 +342,21 @@
                         </div>
                         <div class="col-4">
                             <label class="setting-label">Port</label>
-                            <input type="number" class="form-control form-control-sm" id="cfg-port" placeholder="9001">
+                            <input type="number" class="form-control form-control-sm" id="cfg-port" placeholder="8083">
                         </div>
                     </div>
-                    <div class="mt-2">
+                    
+                    <!-- Tùy chọn SSL -->
+                    <div class="d-flex justify-content-between align-items-center mt-3 bg-light p-2 rounded border">
+                        <label class="setting-label mb-0 text-dark" for="cfg-ssl">
+                            <i class="fas fa-lock me-1"></i> Sử dụng SSL (WSS)
+                        </label>
+                        <div class="form-check form-switch m-0">
+                            <input class="form-check-input" type="checkbox" id="cfg-ssl" style="width: 2.5em;">
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
                         <label class="setting-label">Topic Prefix (Gốc)</label>
                         <input type="text" class="form-control form-control-sm" id="cfg-topic" placeholder="vd: traiga/khu_a">
                     </div>
@@ -352,7 +368,6 @@
                         <label class="setting-label">Username</label>
                         <input type="text" class="form-control form-control-sm" id="cfg-user" placeholder="admin">
                     </div>
-                    <!-- Password nhập ở màn hình login, không lưu ở đây để bảo mật hơn -->
                     <small class="text-muted fst-italic">* Mật khẩu được nhập tại màn hình đăng nhập.</small>
                 </div>
             </div>
@@ -369,8 +384,8 @@
     // --- CẤU HÌNH MẶC ĐỊNH ---
     const DEFAULT_CONFIG = {
         host: "dontseeme.zapto.org",       
-        port: 9443,                
-        useSSL: true,             
+        port: 9443,                // Port mặc định cho WSS
+        useSSL: true,              // Mặc định bật SSL
         username: "noobies",  
         topicPrefix: "traiga/khu_a" 
     };
@@ -403,6 +418,7 @@
         document.getElementById('cfg-port').value = currentConfig.port;
         document.getElementById('cfg-topic').value = currentConfig.topicPrefix;
         document.getElementById('cfg-user').value = currentConfig.username;
+        document.getElementById('cfg-ssl').checked = currentConfig.useSSL;
     }
 
     function saveSettings() {
@@ -410,6 +426,7 @@
         currentConfig.port = parseInt(document.getElementById('cfg-port').value) || DEFAULT_CONFIG.port;
         currentConfig.topicPrefix = document.getElementById('cfg-topic').value || DEFAULT_CONFIG.topicPrefix;
         currentConfig.username = document.getElementById('cfg-user').value || DEFAULT_CONFIG.username;
+        currentConfig.useSSL = document.getElementById('cfg-ssl').checked;
 
         localStorage.setItem('mqtt_settings', JSON.stringify(currentConfig));
         
@@ -448,7 +465,7 @@
 
         const clientId = "web_client_" + Math.random().toString(16).substr(2, 8);
         
-        // Sử dụng currentConfig thay vì hằng số
+        // Khởi tạo Client
         client = new Paho.MQTT.Client(currentConfig.host, Number(currentConfig.port), clientId);
 
         client.onConnectionLost = onConnectionLost;
@@ -459,11 +476,11 @@
             onFailure: (e) => {
                 btn.innerHTML = '<i class="fas fa-bolt me-2"></i>KẾT NỐI HỆ THỐNG';
                 btn.disabled = false;
-                errorDiv.innerText = "Lỗi: " + e.errorMessage + " (Kiểm tra lại Cài đặt Host/Port)";
+                errorDiv.innerText = "Lỗi: " + e.errorMessage + " (Kiểm tra lại Host/Port/SSL)";
             },
             userName: currentConfig.username,
             password: password,
-            useSSL: currentConfig.useSSL,
+            useSSL: currentConfig.useSSL, // Sử dụng cấu hình SSL
             keepAliveInterval: 30
         };
 
@@ -500,9 +517,10 @@
     function updateStatus(online) {
         const dot = document.getElementById('conn-dot');
         const txt = document.getElementById('conn-text');
+        const protocol = currentConfig.useSSL ? "wss://" : "ws://";
         if(online) {
             dot.classList.add('online');
-            txt.innerText = "Đã kết nối: " + currentConfig.host;
+            txt.innerText = "Đã kết nối: " + protocol + currentConfig.host;
             txt.classList.add('text-success');
         } else {
             dot.classList.remove('online');
@@ -517,8 +535,10 @@
         const payload = message.payloadString;
         const p = currentConfig.topicPrefix;
 
+        // Mode
         if (topic === `${p}/system/mode`) updateModeUI(payload);
 
+        // Temp (2 số thập phân)
         if (topic === `${p}/sensor/temp`) {
             document.getElementById('val-temp').innerText = parseFloat(payload).toFixed(2);
         }
@@ -526,6 +546,7 @@
             document.getElementById('set-temp').value = parseFloat(payload).toFixed(2);
         }
 
+        // Fans ON/OFF
         for (let i = 1; i <= 5; i++) {
             if (topic === `${p}/fan${i}/status`) {
                 const isOn = (payload === "ON");
@@ -549,6 +570,7 @@
             }
         }
 
+        // Fan 1 Speed
         if (topic === `${p}/fan1/speed_status`) {
             const speed = parseInt(payload);
             document.getElementById('sld-fan-1').value = speed;
@@ -639,6 +661,4 @@
     }
 </script>
 </body>
-
 </html>
-
