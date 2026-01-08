@@ -1,35 +1,127 @@
-// 1. Cấu hình kết nối
-const mqtt_host = "mqtt.dontseeme.duckdns.org"; 
-const mqtt_port = 9443;
-const mqtt_path = "/mqtt"; // EMQX bắt buộc phải có đường dẫn này cho Websocket
-const use_ssl = true;      // Bắt buộc True vì dùng WSS
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>MQTT Connection Tester</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <style>
+        body { font-family: monospace; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .input-group { margin-bottom: 10px; }
+        label { display: inline-block; width: 150px; font-weight: bold; }
+        input { padding: 5px; width: 250px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
+        #logs { background: #f4f4f4; border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; margin-top: 20px; white-space: pre-wrap; }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
 
-// 2. Tạo Client ID ngẫu nhiên
-const client_id = "web_client_" + parseInt(Math.random() * 100000);
+    <h2>🔍 CÔNG CỤ TEST KẾT NỐI MQTT</h2>
 
-// 3. Khởi tạo đối tượng Client
-// Cú pháp Paho MQTT: new Paho.MQTT.Client(host, port, path, clientId);
-client = new Paho.MQTT.Client(mqtt_host, mqtt_port, mqtt_path, client_id);
+    <div class="input-group">
+        <label>Host (Domain/IP):</label>
+        <input type="text" id="host" value="duckdns.org">
+    </div>
+    <div class="input-group">
+        <label>Port:</label>
+        <input type="number" id="port" value="9443">
+    </div>
+    <div class="input-group">
+        <label>Path (Đường dẫn):</label>
+        <input type="text" id="path" value="/mqtt" placeholder="Để trống hoặc /mqtt">
+        <small>(Mosquitto thường là /mqtt hoặc rỗng)</small>
+    </div>
+    <div class="input-group">
+        <label>Username:</label>
+        <input type="text" id="user" value="admin_traiga">
+    </div>
+    <div class="input-group">
+        <label>Password:</label>
+        <input type="password" id="pass" value="">
+    </div>
+    <div class="input-group">
+        <label>Sử dụng SSL (WSS):</label>
+        <input type="checkbox" id="ssl" style="width: auto;"> <span style="color:red">Check nếu dùng WSS, bỏ nếu dùng WS</span>
+    </div>
 
-// 4. Hàm kết nối
-function connectMQTT() {
-    console.log("Dang ket noi den " + mqtt_host + ":" + mqtt_port);
-    client.connect({
-        onSuccess: onConnect,     // Hàm chạy khi kết nối thành công
-        onFailure: onFail,        // Hàm chạy khi lỗi
-        useSSL: use_ssl,          // QUAN TRỌNG: Phải bật SSL
-        userName: "noobies", // Thay user của bạn
-        password: "123456", // Thay pass của bạn
-        keepAliveInterval: 30
-    });
-}
+    <button onclick="startTest()">BẮT ĐẦU TEST</button>
 
-function onFail(responseObject) {
-    console.log("Loi ket noi: " + responseObject.errorMessage);
-}
+    <div id="logs">Log kết nối sẽ hiện ở đây...</div>
 
-function onConnect() {
-    console.log("DA KET NOI THANH CONG!");
-    // Subscribe vào topic sau khi kết nối
-    client.subscribe("home/quat/control");
-}
+    <script>
+        let client = null;
+
+        function log(msg, type = 'black') {
+            const box = document.getElementById('logs');
+            const time = new Date().toLocaleTimeString();
+            box.innerHTML += `<div style="color:${type}">[${time}] ${msg}</div>`;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function startTest() {
+            if (client) {
+                try { client.disconnect(); } catch(e){}
+                client = null;
+            }
+
+            const host = document.getElementById('host').value;
+            const port = Number(document.getElementById('port').value);
+            const path = document.getElementById('path').value;
+            const user = document.getElementById('user').value;
+            const pass = document.getElementById('pass').value;
+            const useSSL = document.getElementById('ssl').checked;
+
+            document.getElementById('logs').innerHTML = ""; // Xóa log cũ
+            
+            const protocol = useSSL ? "wss://" : "ws://";
+            log(`Đang thử kết nối tới: <b>${protocol}${host}:${port}${path}</b>`, 'info');
+
+            const clientId = "test_client_" + Math.random().toString(16).substr(2, 8);
+            
+            // Cấu hình Client với Path (quan trọng)
+            client = new Paho.MQTT.Client(host, port, path, clientId);
+
+            const options = {
+                timeout: 10, // Giây
+                useSSL: useSSL,
+                onSuccess: () => {
+                    log("✅ KẾT NỐI THÀNH CÔNG!", "success");
+                    log("Server đã cấu hình đúng WebSockets.", "success");
+                },
+                onFailure: (e) => {
+                    log("❌ KẾT NỐI THẤT BẠI!", "error");
+                    log(`Mã lỗi: ${e.errorCode}`, "error");
+                    log(`Chi tiết: ${e.errorMessage}`, "error");
+                    analyzeError(e.errorCode, useSSL, port);
+                }
+            };
+
+            if (user) {
+                options.userName = user;
+                options.password = pass;
+            }
+
+            try {
+                client.connect(options);
+            } catch (e) {
+                log(`❌ Lỗi khởi tạo: ${e.message}`, "error");
+            }
+        }
+
+        function analyzeError(code, ssl, port) {
+            if (code === 7 || code === 8) { // Socket Error
+                log("------------------------------------------------", "black");
+                log("💡 GỢI Ý KHẮC PHỤC:", "blue");
+                log("1. Kiểm tra xem Server đã bật 'protocol websockets' chưa? (Nếu chỉ là 'protocol mqtt' thì web không chạy được).", "black");
+                log(`2. Nếu bạn đang dùng SSL (WSS), chứng chỉ SSL có hợp lệ không?`, "black");
+                log(`3. Thử đổi 'Path' thành rỗng hoặc '/mqtt'.`, "black");
+                if(ssl) {
+                    log("4. Bạn đang bật SSL. Hãy thử truy cập trực tiếp: https://" + document.getElementById('host').value + ":" + port + " trên trình duyệt. Nếu trình duyệt báo 'Không an toàn', kết nối WSS sẽ bị chặn.", "red");
+                }
+            }
+        }
+    </script>
+</body>
+</html>
