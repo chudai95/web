@@ -1,11 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  
-  
-  
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: gap: content:">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -54,7 +50,7 @@
 <body>
   <h2>🐔 MQTT WebApp – Auto Failover</h2>
   <p><b>Máy chủ 1:</b> wss://dontseeme.zapto.org:9443/mqtt</p>
-  <p><b>Máy chủ 2:</b> wss://mqtt.dontseeme.duckdns.org:9443/mqtt</p>
+  <p><b>Máy chủ 2:</b> wss://dontseeme.duckdns.org:9443/mqtt</p>
   <p><b>User:</b> noobies &nbsp;&nbsp; <b>Pass:</b> 123456</p>
 
   <button onclick="sendTest()">📤 Gửi thử tin nhắn</button>
@@ -62,8 +58,8 @@
 
 <script>
 const SERVERS = [
-  "wss://mqtt.dontseeme.duckdns.org:9443/mqtt",
-  "wss://mqtt.dontseeme.duckdns.org:9443/mqtt"
+  "wss://dontseeme.zapto.org:9443/mqtt",
+  "wss://dontseeme.duckdns.org:9443/mqtt"
 ];
 const USER = "noobies";
 const PASS = "123456";
@@ -159,5 +155,3 @@ window.addEventListener("load", connectMQTT);
 </script>
 </body>
 </html>
-
-
