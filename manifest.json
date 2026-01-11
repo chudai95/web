@@ -1,0 +1,21 @@
+{
+    "name": "Hệ Thống Quạt Trại Gà",
+    "short_name": "Trại Gà",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#dfe6e9",
+    "theme_color": "#00b894",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "https://cdn-icons-png.flaticon.com/512/2060/2060268.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "https://cdn-icons-png.flaticon.com/512/2060/2060268.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
