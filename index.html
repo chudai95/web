@@ -4,14 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Hệ Thống Trại Gà</title>
-    
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#e0e5ec">
-
-    <!-- CSS v1000 để ép cập nhật cache -->
-    <link rel="stylesheet" href="style.css?v=1000">
+    <link rel="stylesheet" href="style.css?v=5000">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
 </head>
 <body>
@@ -37,9 +34,16 @@
                     </div>
                 </div>
             </div>
-            <button class="btn-glass-settings" onclick="openSettings()">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            </button>
+            <div class="header-actions">
+                <!-- Nút Hướng dẫn -->
+                <a href="guide.html" class="btn-glass-settings" style="text-decoration: none;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                </a>
+                <!-- Nút Cài đặt -->
+                <button class="btn-glass-settings" onclick="openSettings()">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+            </div>
         </header>
 
         <!-- MAIN DASHBOARD -->
@@ -66,7 +70,11 @@
             <section class="glass-panel vfd-panel">
                 <div class="panel-header">
                     <span class="panel-title">QUẠT TỔNG (BIẾN TẦN)</span>
-                    <span class="vfd-readout"><span id="vfd-speed">0</span>%</span>
+                    <div class="vfd-readout">
+                        <!-- Ô nhập tốc độ biến tần -->
+                        <input type="number" id="vfd-input" class="vfd-input-box" value="0" min="0" max="100" inputmode="numeric">
+                        <span class="vfd-unit">%</span>
+                    </div>
                 </div>
                 <div class="vfd-visual-row">
                     <div class="fan-visual-box">
@@ -177,6 +185,27 @@
                     <label>NHIỆT ĐỘ MỤC TIÊU (°C)</label>
                     <input type="number" id="target-temp" value="28.0" class="input-industrial" inputmode="decimal">
                 </div>
+                
+                <div class="config-block">
+                    <label>CẤU HÌNH THÔNG GIÓ (AUTO)</label>
+                    <div class="param-row">
+                        <div class="param-col">
+                            <label>Min Speed (%)</label>
+                            <input type="number" id="min-speed" value="10" class="input-industrial" inputmode="numeric">
+                        </div>
+                        <div class="param-col">
+                            <label>P-Band (°C)</label>
+                            <input type="number" id="p-band" value="3.0" class="input-industrial" inputmode="decimal">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- THÊM MỚI: CÀI ĐẶT ĐẢO QUẠT -->
+                <div class="config-block">
+                    <label>CHU KỲ ĐẢO QUẠT BÙ (GIỜ)</label>
+                    <input type="number" id="rotation-time" value="24" class="input-industrial" inputmode="numeric" placeholder="VD: 24 giờ">
+                </div>
+
                 <div class="config-block">
                     <label>NGƯỠNG BÙ NHIỆT (DELTA +°C)</label>
                     <div class="delta-grid">
@@ -244,15 +273,14 @@
             </div>
         </div>
 
-        <!-- LOGIN (SỬA LẠI THÊM ICON CON MẮT) -->
+        <!-- LOGIN -->
         <div id="login-overlay" class="login-overlay">
             <div class="login-box glass-panel">
                 <div class="login-logo">🔒</div>
                 <h2>ĐĂNG NHẬP HỆ THỐNG</h2>
                 
-                <!-- Wrapper mới chứa ô nhập và icon mắt -->
                 <div class="password-group">
-                    <input type="password" id="app-password" placeholder="Nhập mật khẩu MQTT..." onkeyup="if(event.key === 'Enter') checkLogin()" enterkeyhint="go">
+                    <input type="password" id="app-password" placeholder="Nhập mật khẩu hệ thống..." onkeyup="if(event.key === 'Enter') checkLogin()" enterkeyhint="go">
                     <span id="toggle-pwd" onclick="togglePwd()">👁️</span>
                 </div>
 

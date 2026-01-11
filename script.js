@@ -15,7 +15,8 @@ const TOPICS = {
 };
 
 let client = null, serverIdx = 0, isConnected = false, currentTemp = 0.0, userPass = "";
-let settings = { target: 28.0, d2: 1.0, d3: 2.0, d4: 3.0, d5: 4.0, mode: 'auto' };
+// Thêm rotationTime vào settings
+let settings = { target: 28.0, minSpeed: 10, pBand: 3.0, rotationTime: 24, d2: 1.0, d3: 2.0, d4: 3.0, d5: 4.0, mode: 'auto' };
 let reconnectTimer = null;
 let isDragging = false; 
 
@@ -32,41 +33,60 @@ window.onload = () => {
         if (event.target === vfdModal) closeVFDModal();
     }
     setupSliderEvents();
+    setupInputEvents(); // Thêm sự kiện cho ô nhập liệu
     updateModeUI();
 };
 
 function setupSliderEvents() {
     const slider = document.getElementById('manual-vfd');
-    slider.addEventListener('mousedown', () => { isDragging = true; });
-    slider.addEventListener('touchstart', () => { isDragging = true; }, {passive: true});
+    const wrapper = slider.parentElement; 
+
+    const startDrag = () => { isDragging = true; wrapper.classList.add('dragging'); };
+    slider.addEventListener('mousedown', startDrag);
+    slider.addEventListener('touchstart', startDrag, {passive: true});
+
     slider.addEventListener('input', function() { updateVFDVisuals(this.value); });
+
     const endDrag = function() {
         isDragging = false;
+        wrapper.classList.remove('dragging');
         if(settings.mode === 'manual') { pub(TOPICS.VFD_CMD, slider.value); vibrate(15); }
     };
+
     slider.addEventListener('change', endDrag);
-    slider.addEventListener('mouseup', () => { isDragging = false; });
-    slider.addEventListener('touchend', () => { isDragging = false; });
+    slider.addEventListener('mouseup', () => { isDragging = false; wrapper.classList.remove('dragging'); });
+    slider.addEventListener('touchend', () => { isDragging = false; wrapper.classList.remove('dragging'); });
 }
 
-// HÀM BẬT TẮT HIỂN THỊ MẬT KHẨU
+// Xử lý sự kiện cho ô nhập liệu biến tần
+function setupInputEvents() {
+    const input = document.getElementById('vfd-input');
+    
+    input.addEventListener('change', function() {
+        let val = parseInt(this.value);
+        if (isNaN(val)) val = 0;
+        if (val < 0) val = 0;
+        if (val > 100) val = 100;
+        
+        this.value = val;
+        updateVFDVisuals(val);
+        
+        if(settings.mode === 'manual') {
+            pub(TOPICS.VFD_CMD, val);
+            vibrate(15);
+        }
+    });
+}
+
 function togglePwd() {
     const inp = document.getElementById('app-password');
     const icon = document.getElementById('toggle-pwd');
-    if(inp.type === "password"){
-        inp.type = "text";
-        icon.innerText = "🙈"; // Icon mắt đóng
-    } else {
-        inp.type = "password";
-        icon.innerText = "👁️"; // Icon mắt mở
-    }
+    if(inp.type === "password"){ inp.type = "text"; icon.innerText = "🙈"; } 
+    else { inp.type = "password"; icon.innerText = "👁️"; }
 }
 
 function checkLogin() {
     const val = document.getElementById('app-password').value;
-    // Cho phép nhập trống nếu cấu hình server không có pass
-    // if(!val) return document.getElementById('app-password').focus(); 
-    
     userPass = val; vibrate(20);
     document.getElementById('login-error').style.display = 'none';
     document.getElementById('login-loading').style.display = 'block';
@@ -139,7 +159,14 @@ function pub(topic, val) {
 function onMsg(msg) {
     const t = msg.destinationName, p = msg.payloadString;
     if(t === TOPICS.TEMP) { currentTemp = parseFloat(p); updateTempUI(); if(settings.mode === 'auto') runAuto(); }
-    else if(t === TOPICS.VFD_CMD) { if (!isDragging) { updateVFDVisuals(p); document.getElementById('manual-vfd').value = parseInt(p); } }
+    else if(t === TOPICS.VFD_CMD) { 
+        if (!isDragging) { 
+            updateVFDVisuals(p); 
+            // Cập nhật cả slider và ô nhập liệu
+            document.getElementById('manual-vfd').value = parseInt(p); 
+            document.getElementById('vfd-input').value = parseInt(p);
+        } 
+    }
     else if(t.includes('fan')) updateRelay(t.slice(-1), p);
 }
 
@@ -154,9 +181,26 @@ function updateTempUI() {
 
 function runAuto() {
     const diff = currentTemp - settings.target;
-    let spd = diff > 0 ? Math.min(diff * 40, 100) : 0;
-    pub(TOPICS.VFD_CMD, Math.round(spd));
-    if (!isDragging) { updateVFDVisuals(Math.round(spd)); document.getElementById('manual-vfd').value = Math.round(spd); }
+    let spd = 0;
+
+    if (diff <= 0) {
+        if (diff < -5.0) spd = 0; 
+        else spd = settings.minSpeed; 
+    } else {
+        let addedSpeed = (diff / settings.pBand) * (100 - settings.minSpeed);
+        spd = settings.minSpeed + addedSpeed;
+        if (spd > 100) spd = 100;
+    }
+
+    spd = Math.round(spd);
+    pub(TOPICS.VFD_CMD, spd);
+    
+    if (!isDragging) { 
+        updateVFDVisuals(spd); 
+        document.getElementById('manual-vfd').value = spd; 
+        document.getElementById('vfd-input').value = spd;
+    }
+
     [2,3,4,5].forEach(i => {
         const d = settings[`d${i}`];
         const st = (diff >= d) ? "ON" : "OFF";
@@ -167,7 +211,11 @@ function runAuto() {
 
 function updateVFDVisuals(val) {
     const v = parseInt(val);
-    document.getElementById('vfd-speed').innerText = v;
+    // Cập nhật ô nhập liệu nếu nó không đang được focus (để tránh nhảy số khi đang gõ)
+    if(document.activeElement.id !== 'vfd-input') {
+        document.getElementById('vfd-input').value = v;
+    }
+    
     document.getElementById('vfd-progress').style.width = v + '%';
     document.querySelector('.slider-industrial').style.setProperty('--thumb-pos', v + '%');
     const icon = document.getElementById('icon-vfd');
@@ -199,6 +247,11 @@ function closeSettings() { vibrate(15); document.getElementById('settings-modal'
 
 function saveSettings() {
     settings.target = parseFloat(document.getElementById('target-temp').value);
+    settings.minSpeed = parseInt(document.getElementById('min-speed').value) || 0;
+    settings.pBand = parseFloat(document.getElementById('p-band').value) || 3.0;
+    // Lưu thời gian đảo quạt
+    settings.rotationTime = parseInt(document.getElementById('rotation-time').value) || 24;
+
     [2,3,4,5].forEach(i => settings[`d${i}`] = parseFloat(document.getElementById(`delta-fan${i}`).value));
     settings.mode = document.getElementById('mode-auto').checked ? 'auto' : 'manual';
     document.getElementById('disp-target').innerText = settings.target.toFixed(1);
@@ -211,6 +264,7 @@ function updateModeUI() {
     const isAuto = (settings.mode === 'auto');
     if (isAuto) document.body.classList.add('auto-mode'); else document.body.classList.remove('auto-mode');
     document.getElementById('manual-vfd').disabled = isAuto;
+    document.getElementById('vfd-input').disabled = isAuto; // Khóa ô nhập khi auto
     for(let i=2; i<=5; i++) document.getElementById(`chk-fan${i}`).disabled = isAuto;
 }
 
