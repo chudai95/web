@@ -2,7 +2,7 @@
     --bg-gradient: linear-gradient(135deg, #f0f2f5 0%, #d9e4f5 100%);
     --primary: #2d3436;
     --accent: #0984e3;
-    --success: #00b894; 
+    --success: #34c759; /* Màu xanh lá tươi (iOS Green) */
     --danger: #ff7675;
     --warning: #ffeaa7;
     --text-main: #2d3436;
@@ -154,7 +154,7 @@ input[type=range] { position: absolute; width: 100%; height: 48px; opacity: 0; z
     padding: 18px; min-height: 120px; position: relative; overflow: visible;
     transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
-.relay-card.active { background: white; border-color: var(--success); box-shadow: 0 8px 24px rgba(0, 184, 148, 0.15); }
+.relay-card.active { background: white; border-color: var(--success); box-shadow: 0 8px 24px rgba(52, 199, 89, 0.15); }
 .card-top-row { display: flex; align-items: center; justify-content: space-between; width: 100%; }
 .icon-circle {
     width: 38px; height: 38px; background: #f1f2f6; border-radius: 50%;
@@ -164,23 +164,55 @@ input[type=range] { position: absolute; width: 100%; height: 48px; opacity: 0; z
 .fan-svg-small.spinning { color: var(--success); animation: spin 0.5s linear infinite; }
 .card-name { font-size: 0.9rem; font-weight: 700; color: var(--text-main); margin-top: 15px; }
 
-/* --- TOGGLE SWITCH (HIGH CONTRAST) --- */
+
+/* --- TOGGLE SWITCH (WARP STYLE - GREEN VERSION) --- */
 .control-wrapper { position: relative; display: flex; align-items: center; }
-.toggle-switch { position: relative; width: 64px; height: 34px; flex-shrink: 0; }
+
+.toggle-switch { 
+    position: relative; 
+    width: 72px;  /* Kích thước to */
+    height: 40px; 
+    flex-shrink: 0; 
+}
 .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+
+/* 1. Phần nền (Track) */
 .toggle-slider {
     position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-    background-color: #a4b0be; transition: 0.4s; border-radius: 34px; 
-    border: 2px solid #747d8c; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    /* MÀU TẮT: Xám nhạt sạch sẽ */
+    background-color: #e5e5ea; 
+    transition: 0.3s cubic-bezier(0.25, 1, 0.5, 1); 
+    border-radius: 40px; 
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
 }
+
+/* 2. Nút tròn (Knob) */
 .toggle-slider:before {
-    position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; 
-    background-color: white; transition: 0.4s cubic-bezier(0.4, 0.0, 0.2, 1); border-radius: 50%; 
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    position: absolute; content: ""; 
+    height: 34px; width: 34px; /* Nút tròn to trắng tinh */
+    left: 3px; bottom: 3px; 
+    background-color: #ffffff; 
+    transition: 0.3s cubic-bezier(0.25, 1, 0.5, 1); 
+    border-radius: 50%; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15), 0 0 1px rgba(0,0,0,0.1);
 }
-input:checked + .toggle-slider { background-color: #00e676; border-color: #00b894; }
-input:checked + .toggle-slider:before { transform: translateX(30px); }
-@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* --- TRẠNG THÁI ON (CONNECTED) --- */
+input:checked + .toggle-slider { 
+    /* MÀU BẬT: Xanh lá cây (Green) */
+    background-color: var(--success); 
+}
+
+input:checked + .toggle-slider:before { 
+    /* Di chuyển: 72px - 34px - 3px - 3px = 32px */
+    transform: translateX(32px); 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Hiệu ứng Active (Nhấn giữ) */
+.toggle-switch:active .toggle-slider:before { width: 38px; }
+input:checked:active + .toggle-slider:before { transform: translateX(28px); }
+
 
 /* --- LOCK BADGE --- */
 .lock-badge {
@@ -247,7 +279,6 @@ body.auto-mode .slider-industrial, body.auto-mode .toggle-switch { opacity: 0.6;
 .login-logo { font-size: 3rem; margin-bottom: 20px; }
 .login-box h2 { font-size: 1.3rem; color: var(--primary); margin-bottom: 25px; font-weight: 800; }
 
-/* Wrapper để chứa input và icon con mắt */
 .password-group { position: relative; width: 100%; margin-bottom: 20px; }
 .password-group input { width: 100%; padding: 16px; padding-right: 45px; border: 1px solid #dfe6e9; border-radius: 14px; box-sizing: border-box; text-align: center; font-size: 1.2rem; background: rgba(255,255,255,0.8); margin: 0; }
 #toggle-pwd { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem; opacity: 0.6; z-index: 2; }
