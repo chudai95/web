@@ -164,46 +164,22 @@ input[type=range] { position: absolute; width: 100%; height: 48px; opacity: 0; z
 .fan-svg-small.spinning { color: var(--success); animation: spin 0.5s linear infinite; }
 .card-name { font-size: 0.9rem; font-weight: 700; color: var(--text-main); margin-top: 15px; }
 
-/* --- TOGGLE SWITCH (FIXED: HIGH CONTRAST) --- */
+/* --- TOGGLE SWITCH (HIGH CONTRAST) --- */
 .control-wrapper { position: relative; display: flex; align-items: center; }
-
-.toggle-switch { 
-    position: relative; 
-    width: 64px; height: 34px; 
-    flex-shrink: 0; 
-}
+.toggle-switch { position: relative; width: 64px; height: 34px; flex-shrink: 0; }
 .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
-
-/* Track: Màu nền tắt ĐẬM để nổi trên nền trắng */
 .toggle-slider {
     position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-    background-color: #a4b0be; /* Xám đậm rõ ràng */
-    transition: 0.4s;
-    border-radius: 34px; 
-    border: 2px solid #747d8c; /* Viền xám đậm bao quanh */
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    background-color: #a4b0be; transition: 0.4s; border-radius: 34px; 
+    border: 2px solid #747d8c; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
 }
-
-/* Knob: Nút tròn trắng */
 .toggle-slider:before {
-    position: absolute; content: ""; 
-    height: 26px; width: 26px; 
-    left: 2px; bottom: 2px; 
-    background-color: white; 
-    transition: 0.4s cubic-bezier(0.4, 0.0, 0.2, 1); 
-    border-radius: 50%; 
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3); /* Bóng đổ mạnh */
+    position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; 
+    background-color: white; transition: 0.4s cubic-bezier(0.4, 0.0, 0.2, 1); border-radius: 50%; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }
-
-/* ON State */
-input:checked + .toggle-slider { 
-    background-color: #00e676; /* Xanh lá NEON */
-    border-color: #00b894;
-}
-input:checked + .toggle-slider:before { 
-    transform: translateX(30px); 
-}
-
+input:checked + .toggle-slider { background-color: #00e676; border-color: #00b894; }
+input:checked + .toggle-slider:before { transform: translateX(30px); }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
 /* --- LOCK BADGE --- */
@@ -264,14 +240,21 @@ body.auto-mode .slider-industrial, body.auto-mode .toggle-switch { opacity: 0.6;
 .param-col input, .select-industrial { width: 100%; padding: 12px; border: 1px solid #e5e5ea; border-radius: 10px; font-family: monospace; font-weight: 600; box-sizing: border-box; background: #fafafa; }
 .btn-upload { width: 100%; background: var(--danger); color: white; padding: 16px; border: none; border-radius: 14px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(255, 118, 117, 0.3); }
 .modal-footer-fixed { margin-top: auto; }
-/* LOGIN */
+
+/* LOGIN & PASSWORD VISIBILITY */
 .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-gradient); z-index: 300; display: flex; align-items: center; justify-content: center; }
 .login-box { background: rgba(255,255,255,0.85); padding: 45px 30px; border-radius: 28px; text-align: center; width: 85%; max-width: 360px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.5); }
 .login-logo { font-size: 3rem; margin-bottom: 20px; }
 .login-box h2 { font-size: 1.3rem; color: var(--primary); margin-bottom: 25px; font-weight: 800; }
-.login-box input[type=password] { width: 100%; padding: 16px; border: 1px solid #dfe6e9; border-radius: 14px; margin-bottom: 20px; box-sizing: border-box; text-align: center; font-size: 1.2rem; background: rgba(255,255,255,0.8); }
+
+/* Wrapper để chứa input và icon con mắt */
+.password-group { position: relative; width: 100%; margin-bottom: 20px; }
+.password-group input { width: 100%; padding: 16px; padding-right: 45px; border: 1px solid #dfe6e9; border-radius: 14px; box-sizing: border-box; text-align: center; font-size: 1.2rem; background: rgba(255,255,255,0.8); margin: 0; }
+#toggle-pwd { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem; opacity: 0.6; z-index: 2; }
+#toggle-pwd:active { transform: translateY(-50%) scale(0.9); }
+
 .login-box button { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-weight: bold; font-size: 1rem; box-shadow: 0 8px 20px rgba(45, 52, 54, 0.2); transition: transform 0.1s; }
 .login-box button:active { transform: scale(0.98); }
-.remember-row { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; font-size: 0.9rem; color: var(--text-sub); gap: 8px; }
+.remember-row { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; font-size: 0.9rem; color: var(--text-sub); gap: 8px; margin-top: 15px; }
 #login-error { color: var(--danger); font-size: 0.9rem; margin-top: 15px; display: none; font-weight: bold; }
 #login-loading { color: var(--accent); font-size: 0.9rem; margin-top: 15px; display: none; font-weight: 600; }

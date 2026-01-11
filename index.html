@@ -10,9 +10,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#e0e5ec">
 
-    <!-- QUAN TRỌNG: Thêm ?v=999 để ép cập nhật cache -->
-    <link rel="stylesheet" href="style.css?v=999">
-    
+    <!-- CSS v1000 để ép cập nhật cache -->
+    <link rel="stylesheet" href="style.css?v=1000">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
 </head>
 <body>
@@ -245,15 +244,21 @@
             </div>
         </div>
 
-        <!-- LOGIN -->
+        <!-- LOGIN (SỬA LẠI THÊM ICON CON MẮT) -->
         <div id="login-overlay" class="login-overlay">
             <div class="login-box glass-panel">
                 <div class="login-logo">🔒</div>
                 <h2>ĐĂNG NHẬP HỆ THỐNG</h2>
-                <input type="password" id="app-password" placeholder="Nhập mật khẩu..." onkeyup="if(event.key === 'Enter') checkLogin()" enterkeyhint="go">
+                
+                <!-- Wrapper mới chứa ô nhập và icon mắt -->
+                <div class="password-group">
+                    <input type="password" id="app-password" placeholder="Nhập mật khẩu MQTT..." onkeyup="if(event.key === 'Enter') checkLogin()" enterkeyhint="go">
+                    <span id="toggle-pwd" onclick="togglePwd()">👁️</span>
+                </div>
+
                 <div class="remember-row"><input type="checkbox" id="chk-remember"><label for="chk-remember">Ghi nhớ đăng nhập</label></div>
                 <button id="btn-login" onclick="checkLogin()">XÁC THỰC</button>
-                <p id="login-error">Mật khẩu không đúng</p>
+                <p id="login-error">Kết nối thất bại (Sai mật khẩu)</p>
                 <p id="login-loading">Đang kết nối...</p>
             </div>
         </div>
