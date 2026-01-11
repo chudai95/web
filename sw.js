@@ -1,8 +1,7 @@
-const CACHE_NAME = 'smart-coop-v5'; // LÊN ĐỜI V5
+const CACHE_NAME = 'smart-coop-v6'; // LÊN ĐỜI V6
 const ASSETS = [
     './',
     './index.html',
-    './guide.html', // Thêm file hướng dẫn vào cache
     './style.css',
     './script.js',
     './manifest.json',

@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#e0e5ec">
-    <link rel="stylesheet" href="style.css?v=5000">
+    <link rel="stylesheet" href="style.css?v=6000">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
 </head>
 <body>
@@ -35,13 +35,13 @@
                 </div>
             </div>
             <div class="header-actions">
-                <!-- Nút Hướng dẫn -->
-                <a href="guide.html" class="btn-glass-settings" style="text-decoration: none;">
+                <!-- Nút Hướng dẫn (Mở Modal) -->
+                <button class="btn-glass-settings" onclick="openGuide()">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                </a>
+                </button>
                 <!-- Nút Cài đặt -->
                 <button class="btn-glass-settings" onclick="openSettings()">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 </button>
             </div>
         </header>
@@ -71,7 +71,6 @@
                 <div class="panel-header">
                     <span class="panel-title">QUẠT TỔNG (BIẾN TẦN)</span>
                     <div class="vfd-readout">
-                        <!-- Ô nhập tốc độ biến tần -->
                         <input type="number" id="vfd-input" class="vfd-input-box" value="0" min="0" max="100" inputmode="numeric">
                         <span class="vfd-unit">%</span>
                     </div>
@@ -172,54 +171,99 @@
                     <h3>CẤU HÌNH HỆ THỐNG</h3>
                     <button class="btn-close-icon dark-icon" onclick="closeSettings()">✕</button>
                 </div>
-                <div class="config-block">
-                    <label>CHẾ ĐỘ VẬN HÀNH</label>
-                    <div class="segmented-control">
-                        <input type="radio" name="mode" id="mode-auto" value="auto" checked onchange="saveSettings()">
-                        <label for="mode-auto">TỰ ĐỘNG</label>
-                        <input type="radio" name="mode" id="mode-manual" value="manual" onchange="saveSettings()">
-                        <label for="mode-manual">THỦ CÔNG</label>
-                    </div>
-                </div>
-                <div class="config-block">
-                    <label>NHIỆT ĐỘ MỤC TIÊU (°C)</label>
-                    <input type="number" id="target-temp" value="28.0" class="input-industrial" inputmode="decimal">
-                </div>
                 
-                <div class="config-block">
-                    <label>CẤU HÌNH THÔNG GIÓ (AUTO)</label>
-                    <div class="param-row">
-                        <div class="param-col">
-                            <label>Min Speed (%)</label>
-                            <input type="number" id="min-speed" value="10" class="input-industrial" inputmode="numeric">
+                <div class="modal-scroll-body">
+                    <div class="config-block">
+                        <label>CHẾ ĐỘ VẬN HÀNH</label>
+                        <div class="segmented-control">
+                            <input type="radio" name="mode" id="mode-auto" value="auto" checked onchange="saveSettings()">
+                            <label for="mode-auto">TỰ ĐỘNG</label>
+                            <input type="radio" name="mode" id="mode-manual" value="manual" onchange="saveSettings()">
+                            <label for="mode-manual">THỦ CÔNG</label>
                         </div>
-                        <div class="param-col">
-                            <label>P-Band (°C)</label>
-                            <input type="number" id="p-band" value="3.0" class="input-industrial" inputmode="decimal">
+                    </div>
+                    <div class="config-block">
+                        <label>NHIỆT ĐỘ MỤC TIÊU (°C)</label>
+                        <input type="number" id="target-temp" value="28.0" class="input-industrial" inputmode="decimal">
+                    </div>
+                    
+                    <div class="config-block">
+                        <label>CẤU HÌNH THÔNG GIÓ (AUTO)</label>
+                        <div class="param-row">
+                            <div class="param-col">
+                                <label>Min Speed (%)</label>
+                                <input type="number" id="min-speed" value="10" class="input-industrial" inputmode="numeric">
+                            </div>
+                            <div class="param-col">
+                                <label>P-Band (°C)</label>
+                                <input type="number" id="p-band" value="3.0" class="input-industrial" inputmode="decimal">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="config-block">
+                        <label>CHU KỲ ĐẢO QUẠT BÙ (GIỜ)</label>
+                        <input type="number" id="rotation-time" value="24" class="input-industrial" inputmode="numeric" placeholder="VD: 24 giờ">
+                    </div>
+
+                    <div class="config-block">
+                        <label>NGƯỠNG BÙ NHIỆT (DELTA +°C)</label>
+                        <div class="delta-grid">
+                            <div class="delta-box"><span>Q2</span><input type="number" id="delta-fan2" value="1.0" inputmode="decimal"></div>
+                            <div class="delta-box"><span>Q3</span><input type="number" id="delta-fan3" value="2.0" inputmode="decimal"></div>
+                            <div class="delta-box"><span>Q4</span><input type="number" id="delta-fan4" value="3.0" inputmode="decimal"></div>
+                            <div class="delta-box"><span>Q5</span><input type="number" id="delta-fan5" value="4.0" inputmode="decimal"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- THÊM MỚI: CÀI ĐẶT ĐẢO QUẠT -->
-                <div class="config-block">
-                    <label>CHU KỲ ĐẢO QUẠT BÙ (GIỜ)</label>
-                    <input type="number" id="rotation-time" value="24" class="input-industrial" inputmode="numeric" placeholder="VD: 24 giờ">
-                </div>
-
-                <div class="config-block">
-                    <label>NGƯỠNG BÙ NHIỆT (DELTA +°C)</label>
-                    <div class="delta-grid">
-                        <div class="delta-box"><span>Q2</span><input type="number" id="delta-fan2" value="1.0" inputmode="decimal"></div>
-                        <div class="delta-box"><span>Q3</span><input type="number" id="delta-fan3" value="2.0" inputmode="decimal"></div>
-                        <div class="delta-box"><span>Q4</span><input type="number" id="delta-fan4" value="3.0" inputmode="decimal"></div>
-                        <div class="delta-box"><span>Q5</span><input type="number" id="delta-fan5" value="4.0" inputmode="decimal"></div>
-                    </div>
-                </div>
                 <div class="modal-footer">
                     <button class="btn-secondary" onclick="openVFDModal()">THÔNG SỐ BIẾN TẦN</button>
                     <button class="btn-primary" onclick="closeSettings()">LƯU & ĐÓNG</button>
                 </div>
                 <div class="logout-link" onclick="logoutApp()">ĐĂNG XUẤT</div>
+            </div>
+        </div>
+
+        <!-- GUIDE MODAL (MỚI) -->
+        <div id="guide-modal" class="modal-overlay">
+            <div class="modal-content glass-modal">
+                <div class="modal-header-simple">
+                    <h3>HƯỚNG DẪN VẬN HÀNH</h3>
+                    <button class="btn-close-icon dark-icon" onclick="closeGuide()">✕</button>
+                </div>
+                
+                <div class="modal-scroll-body guide-content">
+                    <div class="guide-section">
+                        <h3>1. CHẾ ĐỘ VẬN HÀNH</h3>
+                        <p><span class="guide-highlight">TỰ ĐỘNG (AUTO):</span> Hệ thống tự động điều chỉnh tốc độ quạt biến tần và bật/tắt các quạt bù dựa trên nhiệt độ cài đặt.</p>
+                        <p><span class="guide-highlight">THỦ CÔNG (MANUAL):</span> Bạn toàn quyền điều khiển tốc độ biến tần và bật/tắt từng quạt bù.</p>
+                    </div>
+
+                    <div class="guide-section">
+                        <h3>2. CÀI ĐẶT THÔNG SỐ</h3>
+                        <ul>
+                            <li><span class="guide-highlight">Nhiệt độ mục tiêu:</span> Nhiệt độ lý tưởng bạn muốn duy trì cho đàn gà (Ví dụ: 28°C).</li>
+                            <li><span class="guide-highlight">Min Speed (%):</span> Tốc độ thấp nhất của quạt biến tần khi trời lạnh, đảm bảo gà luôn có khí tươi để thở.</li>
+                            <li><span class="guide-highlight">P-Band (Dải điều chỉnh):</span> Khoảng nhiệt độ để quạt tăng tốc từ Min lên Max. Ví dụ P-Band = 3°C, quạt sẽ tăng tốc dần dần khi nhiệt độ vượt quá mục tiêu từ 0 đến 3 độ.</li>
+                            <li><span class="guide-highlight">Ngưỡng bù nhiệt (Delta):</span> Là mức chênh lệch nhiệt độ để bật quạt bù. Ví dụ: Mục tiêu 28°C, Delta Q2 là 1.0°C -> Khi nhiệt độ lên 29°C (28+1), Quạt 2 sẽ bật.</li>
+                            <li><span class="guide-highlight">Chu kỳ đảo quạt:</span> Thời gian (giờ) để hệ thống tự động đổi thứ tự chạy các quạt bù, giúp các quạt hoạt động đều nhau.</li>
+                        </ul>
+                    </div>
+
+                    <div class="guide-section">
+                        <h3>3. ĐIỀU KHIỂN BIẾN TẦN</h3>
+                        <p>Bạn có thể điều khiển quạt tổng (biến tần) bằng 2 cách:</p>
+                        <ul>
+                            <li>Kéo thanh trượt sang trái/phải.</li>
+                            <li>Bấm vào con số phần trăm (%) và nhập trực tiếp giá trị mong muốn (0-100).</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="closeGuide()">ĐÓNG</button>
+                </div>
             </div>
         </div>
 
