@@ -8,6 +8,7 @@ const TOPICS = {
     TEMP: "farm/coop1/sensor/temp",
     VFD_CMD: "farm/coop1/control/vfd",
     VFD_CFG: "farm/coop1/config/vfd_params",
+    FAN1: "farm/coop1/control/fan1",
     FAN2: "farm/coop1/control/fan2",
     FAN3: "farm/coop1/control/fan3",
     FAN4: "farm/coop1/control/fan4",
@@ -15,7 +16,8 @@ const TOPICS = {
 };
 
 let client = null, serverIdx = 0, isConnected = false, currentTemp = 0.0, userPass = "";
-let settings = { target: 28.0, minSpeed: 10, pBand: 3.0, rotationTime: 24, d2: 1.0, d3: 2.0, d4: 3.0, d5: 4.0, mode: 'auto' };
+// Settings mới: Chỉ còn minHz và pBand
+let settings = { target: 28.0, minHz: 10, pBand: 3.0, mode: 'auto' };
 let reconnectTimer = null;
 let isDragging = false; 
 
@@ -62,10 +64,11 @@ function setupSliderEvents() {
 function setupInputEvents() {
     const input = document.getElementById('vfd-input');
     input.addEventListener('change', function() {
-        let val = parseInt(this.value);
+        let val = parseFloat(this.value);
         if (isNaN(val)) val = 0;
         if (val < 0) val = 0;
-        if (val > 100) val = 100;
+        if (val > 50) val = 50; // Max 50Hz
+        
         this.value = val;
         updateVFDVisuals(val);
         if(settings.mode === 'manual') { pub(TOPICS.VFD_CMD, val); vibrate(15); }
@@ -156,8 +159,8 @@ function onMsg(msg) {
     else if(t === TOPICS.VFD_CMD) { 
         if (!isDragging) { 
             updateVFDVisuals(p); 
-            document.getElementById('manual-vfd').value = parseInt(p); 
-            document.getElementById('vfd-input').value = parseInt(p);
+            document.getElementById('manual-vfd').value = parseFloat(p); 
+            document.getElementById('vfd-input').value = parseFloat(p);
         } 
     }
     else if(t.includes('fan')) updateRelay(t.slice(-1), p);
@@ -172,39 +175,48 @@ function updateTempUI() {
     else el.classList.add('good');
 }
 
+// --- THUẬT TOÁN MỚI: CHỈ ĐIỀU KHIỂN TẦN SỐ (0-50Hz) ---
 function runAuto() {
     const diff = currentTemp - settings.target;
-    let spd = 0;
+    let hz = 0;
+
     if (diff <= 0) {
-        if (diff < -5.0) spd = 0; 
-        else spd = settings.minSpeed; 
+        // Nếu lạnh quá (thấp hơn 5 độ) -> Tắt biến tần (0Hz)
+        if (diff < -5.0) hz = 0; 
+        // Nếu lạnh vừa -> Chạy Min Hz
+        else hz = settings.minHz; 
     } else {
-        let addedSpeed = (diff / settings.pBand) * (100 - settings.minSpeed);
-        spd = settings.minSpeed + addedSpeed;
-        if (spd > 100) spd = 100;
+        // P-Control: Tăng từ MinHz lên 50Hz
+        let addedHz = (diff / settings.pBand) * (50 - settings.minHz);
+        hz = settings.minHz + addedHz;
+        if (hz > 50) hz = 50;
     }
-    spd = Math.round(spd);
-    pub(TOPICS.VFD_CMD, spd);
+
+    // Làm tròn 1 số thập phân
+    hz = Math.round(hz * 10) / 10;
+    
+    pub(TOPICS.VFD_CMD, hz);
+    
     if (!isDragging) { 
-        updateVFDVisuals(spd); 
-        document.getElementById('manual-vfd').value = spd; 
-        document.getElementById('vfd-input').value = spd;
+        updateVFDVisuals(hz); 
+        document.getElementById('manual-vfd').value = hz; 
+        document.getElementById('vfd-input').value = hz;
     }
-    [2,3,4,5].forEach(i => {
-        const d = settings[`d${i}`];
-        const st = (diff >= d) ? "ON" : "OFF";
-        pub(TOPICS[`FAN${i}`], st);
-        updateRelay(i, st);
-    });
+    
+    // LƯU Ý: Không tự động bật tắt quạt nữa. Người dùng tự bật.
 }
 
 function updateVFDVisuals(val) {
-    const v = parseInt(val);
+    const v = parseFloat(val);
     if(document.activeElement.id !== 'vfd-input') { document.getElementById('vfd-input').value = v; }
-    document.getElementById('vfd-progress').style.width = v + '%';
-    document.querySelector('.slider-industrial').style.setProperty('--thumb-pos', v + '%');
+    
+    // Tính % để hiển thị thanh progress (v / 50 * 100)
+    const percent = (v / 50) * 100;
+    document.getElementById('vfd-progress').style.width = percent + '%';
+    document.querySelector('.slider-industrial').style.setProperty('--thumb-pos', percent + '%');
+    
     const icon = document.getElementById('icon-vfd');
-    if (v > 0) { icon.classList.add("spinning"); icon.style.animationDuration = (1.1 - v/100) + "s"; }
+    if (v > 0) { icon.classList.add("spinning"); icon.style.animationDuration = (1.1 - percent/100) + "s"; }
     else icon.classList.remove("spinning");
 }
 
@@ -219,27 +231,21 @@ function updateRelay(n, val) {
 
 function toggleFan(n) {
     vibrate(20);
-    if(settings.mode !== 'manual') {
-        const chk = document.getElementById(`chk-fan${n}`);
-        setTimeout(() => { chk.checked = !chk.checked; }, 200); return;
-    }
+    // Luôn cho phép bật tắt, không chặn bởi chế độ Auto
     const chk = document.getElementById(`chk-fan${n}`);
     pub(TOPICS[`FAN${n}`], chk.checked ? "ON" : "OFF");
 }
 
 function openSettings() { vibrate(15); document.getElementById('settings-modal').classList.add('active'); }
 function closeSettings() { vibrate(15); document.getElementById('settings-modal').classList.remove('active'); saveSettings(); }
-
-// --- HÀM MỞ/ĐÓNG HƯỚNG DẪN ---
 function openGuide() { vibrate(15); document.getElementById('guide-modal').classList.add('active'); }
 function closeGuide() { vibrate(15); document.getElementById('guide-modal').classList.remove('active'); }
 
 function saveSettings() {
     settings.target = parseFloat(document.getElementById('target-temp').value);
-    settings.minSpeed = parseInt(document.getElementById('min-speed').value) || 0;
+    settings.minHz = parseFloat(document.getElementById('min-hz').value) || 0;
     settings.pBand = parseFloat(document.getElementById('p-band').value) || 3.0;
-    settings.rotationTime = parseInt(document.getElementById('rotation-time').value) || 24;
-    [2,3,4,5].forEach(i => settings[`d${i}`] = parseFloat(document.getElementById(`delta-fan${i}`).value));
+    
     settings.mode = document.getElementById('mode-auto').checked ? 'auto' : 'manual';
     document.getElementById('disp-target').innerText = settings.target.toFixed(1);
     document.getElementById('mode-badge').innerText = settings.mode === 'auto' ? 'TỰ ĐỘNG' : 'THỦ CÔNG';
@@ -250,9 +256,10 @@ function saveSettings() {
 function updateModeUI() {
     const isAuto = (settings.mode === 'auto');
     if (isAuto) document.body.classList.add('auto-mode'); else document.body.classList.remove('auto-mode');
+    
+    // Chỉ khóa điều khiển biến tần, KHÔNG khóa các quạt con
     document.getElementById('manual-vfd').disabled = isAuto;
     document.getElementById('vfd-input').disabled = isAuto;
-    for(let i=2; i<=5; i++) document.getElementById(`chk-fan${i}`).disabled = isAuto;
 }
 
 function openVFDModal() { vibrate(15); document.getElementById('settings-modal').classList.remove('active'); document.getElementById('vfd-modal').classList.add('active'); }

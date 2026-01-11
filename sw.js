@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smart-coop-v6'; // LÊN ĐỜI V6
+const CACHE_NAME = 'smart-coop-v8'; // LÊN ĐỜI V8
 const ASSETS = [
     './',
     './index.html',
